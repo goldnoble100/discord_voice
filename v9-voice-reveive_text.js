@@ -37,24 +37,17 @@ client.on('message', msg => {
 
                 conn.on('speaking', (user, speaking) => {
                     if (speaking) {
-                        msg.channel.sendMessage(`I'm listening to ${user}`);
+                        if(user.bot)
+                            return;
 
-                        // !! modify Streo to "MONO" !!
-                        // this creates a 16-bit signed PCM, "Single" 48KHz PCM stream.
-                        const audioStream = receiver.createPCMStream(user);
-                        const recognizeStream = speechClient.streamingRecognize(stt_request)
-                            .on('error', console.error)
-                            .on('data', (data) => {
-                                if(data.error === null){
-                                    console.log(`${user.username} : ${data.results[0].alternatives[0].transcript}`);
-                                }
-                            });
-                        audioStream.pipe(recognizeStream);
+                        const worker = new Worker('worker.js');
 
-                        // when the stream ends (the user stopped talking) tell the user
-                        audioStream.on('end', () => {
-                            msg.channel.sendMessage(`I'm no longer listening to ${user}`);
+                        // メッセージを受信してコンソールに表示する
+                        worker.addEventListener('message', (message) => {
+                            console.log(message.data);
                         });
+                        worker.postMessage(user);
+
                     }
                 });
             })
